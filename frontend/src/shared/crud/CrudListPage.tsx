@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { alpha } from '@mui/material/styles'
 import {
   Box,
@@ -47,6 +47,8 @@ export interface CrudListPageProps<T extends { id: string }> {
   highlightRowIf?: (row: T) => boolean
   /** Opt-in phone card layout. When set, viewports <600px render this instead of the DataGrid; all other pages keep the grid unchanged. */
   renderMobileCard?: (row: T) => ReactNode
+  /** Opt-in: on phone-sized viewports, moves the Add button out of the header and next to extraToolbar so they sit side by side. Other pages are unaffected unless they set this. */
+  mobileInlineActions?: boolean
 }
 
 export function CrudListPage<T extends { id: string }>({
@@ -71,8 +73,10 @@ export function CrudListPage<T extends { id: string }>({
   hideActions = false,
   highlightRowIf,
   renderMobileCard,
+  mobileInlineActions = false,
 }: CrudListPageProps<T>) {
   const isMobile = useIsMobile()
+  const addButtonInHeader = !(isMobile && mobileInlineActions)
   const actionColumn: GridColDef<T>[] =
     hideActions || (!onView && !onEdit && !onDelete)
       ? []
@@ -130,7 +134,7 @@ export function CrudListPage<T extends { id: string }>({
             </Typography>
           )}
         </Box>
-        {onAdd && (
+        {onAdd && addButtonInHeader && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd} sx={{ alignSelf: { xs: 'stretch', sm: 'center' } }}>
             {addLabel}
           </Button>
@@ -154,11 +158,25 @@ export function CrudListPage<T extends { id: string }>({
             }}
           />
         )}
-        {extraToolbar}
+        {onAdd && !addButtonInHeader ? (
+          <Stack direction="row" spacing={1.5} sx={{ width: '100%', flexWrap: 'wrap' }} alignItems="center">
+            <Tooltip title={addLabel}>
+              <IconButton
+                onClick={onAdd}
+                sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
+              >
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+            {extraToolbar}
+          </Stack>
+        ) : (
+          extraToolbar
+        )}
       </Stack>
 
       {isMobile && renderMobileCard ? (
-        <Stack spacing={1.5}>
+        <Stack spacing={1.5} sx={{ pb: 'max(16px, env(safe-area-inset-bottom))' }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
               <CircularProgress size={28} />

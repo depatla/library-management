@@ -6,6 +6,7 @@ import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { useListPartnersQuery, useListSettlementsQuery, useGenerateSettlementsMutation, useRecordReceiptMutation, type Settlement } from './partnersApi'
+import { SettlementMobileCard } from './SettlementMobileCard'
 
 const receiptSchema = z.object({ amount: z.number().positive('Must be greater than 0') })
 type ReceiptForm = z.infer<typeof receiptSchema>
@@ -108,6 +109,15 @@ export function SettlementsTab({ libraryId }: { libraryId: string }) {
               setServerError(null)
               setRecording(row)
             }}
+            renderMobileCard={(settlement) => (
+              <SettlementMobileCard
+                settlement={settlement}
+                onRecordReceipt={() => {
+                  setServerError(null)
+                  setRecording(settlement)
+                }}
+              />
+            )}
           />
         )}
       </Box>

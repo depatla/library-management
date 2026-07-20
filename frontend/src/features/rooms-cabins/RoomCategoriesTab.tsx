@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { z } from 'zod'
-import { Box, Button, Chip, IconButton, Tooltip } from '@mui/material'
+import { Box, Chip, IconButton, Tooltip } from '@mui/material'
 import type { GridColDef } from '@mui/x-data-grid'
 import AcUnitIcon from '@mui/icons-material/AcUnitOutlined'
 import WhatshotIcon from '@mui/icons-material/WhatshotOutlined'
@@ -8,6 +8,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFileOutlined'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
+import { ResponsiveToolbarButton } from '@/shared/crud/ResponsiveToolbarButton'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { CabinBulkUploadDialog } from './CabinBulkUploadDialog'
 import { RoomCategoryMobileCard } from './RoomCategoryMobileCard'
@@ -165,6 +166,7 @@ export function RoomCategoriesTab({ libraryId }: { libraryId: string }) {
         }}
         onDelete={(row) => setDeleting(row)}
         hideActions={false}
+        mobileInlineActions
         renderMobileCard={(category) => (
           <RoomCategoryMobileCard
             category={category}
@@ -177,9 +179,7 @@ export function RoomCategoriesTab({ libraryId }: { libraryId: string }) {
           />
         )}
         extraToolbar={
-          <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
-            Bulk upload cabins
-          </Button>
+          <ResponsiveToolbarButton icon={<UploadFileIcon />} label="Bulk upload cabins" onClick={() => setBulkUploadOpen(true)} />
         }
       />
 

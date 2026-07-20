@@ -16,6 +16,7 @@ import {
   type Partner,
 } from './partnersApi'
 import { SettlementsTab } from './SettlementsTab'
+import { PartnerMobileCard } from './PartnerMobileCard'
 
 const createSchema = z.object({
   name: z.string().min(1, 'Name is required').max(150),
@@ -176,6 +177,20 @@ function PartnersTab({ libraryId }: { libraryId: string }) {
           setEditing(row)
         }}
         onDelete={(row) => setDeleting(row)}
+        renderMobileCard={(partner) => (
+          <PartnerMobileCard
+            partner={partner}
+            onGrantLogin={() => {
+              setServerError(null)
+              setGrantingLoginFor(partner)
+            }}
+            onEdit={() => {
+              setServerError(null)
+              setEditing(partner)
+            }}
+            onDelete={() => setDeleting(partner)}
+          />
+        )}
       />
 
       <CrudFormDialog<CreateForm>

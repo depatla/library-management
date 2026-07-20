@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { z } from 'zod'
-import { Button, Chip } from '@mui/material'
+import { Chip } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFileOutlined'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
+import { ResponsiveToolbarButton } from '@/shared/crud/ResponsiveToolbarButton'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { CabinBulkUploadDialog } from './CabinBulkUploadDialog'
 import { CabinMobileCard } from './CabinMobileCard'
@@ -142,6 +143,7 @@ export function CabinsTab({ libraryId }: { libraryId: string }) {
           setEditing(row)
         }}
         onDelete={(row) => setDeleting(row)}
+        mobileInlineActions
         renderMobileCard={(cabin) => (
           <CabinMobileCard
             cabin={cabin}
@@ -153,9 +155,7 @@ export function CabinsTab({ libraryId }: { libraryId: string }) {
           />
         )}
         extraToolbar={
-          <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
-            Bulk upload
-          </Button>
+          <ResponsiveToolbarButton icon={<UploadFileIcon />} label="Bulk upload" onClick={() => setBulkUploadOpen(true)} />
         }
       />
 

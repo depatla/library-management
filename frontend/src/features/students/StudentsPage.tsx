@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 import dayjs from 'dayjs'
-import { Chip, IconButton, Tooltip, Button } from '@mui/material'
+import { Chip, IconButton, Tooltip } from '@mui/material'
 import MeetingRoomOutlinedIcon from '@mui/icons-material/MeetingRoomOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import PaymentOutlinedIcon from '@mui/icons-material/PaymentOutlined'
@@ -12,9 +12,11 @@ import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
+import { ResponsiveToolbarButton } from '@/shared/crud/ResponsiveToolbarButton'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { StudentBulkUploadDialog } from './StudentBulkUploadDialog'
 import { SendPaymentNudgesDialog } from './SendPaymentNudgesDialog'
+import { StudentMobileCard } from './StudentMobileCard'
 import {
   useListStudentsQuery,
   useCreateStudentMutation,
@@ -419,17 +421,39 @@ export function StudentsPage() {
           setEditing(row)
         }}
         onDelete={(row) => setDeleting(row)}
+        mobileInlineActions
+        renderMobileCard={(student) => (
+          <StudentMobileCard
+            student={student}
+            onAssignCabin={() => {
+              setServerError(null)
+              setCabinSearch('')
+              setAssigningCabinTo(student)
+            }}
+            onRemoveCabin={() => setRemovingCabinFrom(student)}
+            onAssignLocker={() => {
+              setServerError(null)
+              setAssigningLockerTo(student)
+            }}
+            onRemoveLocker={() => setRemovingLockerFrom(student)}
+            onRecordPayment={() => {
+              setServerError(null)
+              setRecordingPaymentFor(student)
+            }}
+            onEdit={() => {
+              setServerError(null)
+              setEditing(student)
+            }}
+            onDelete={() => setDeleting(student)}
+          />
+        )}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by name or phone…"
         extraToolbar={
           <>
-            <Button variant="outlined" startIcon={<NotificationsActiveOutlinedIcon />} onClick={() => setNudgesOpen(true)}>
-              Send Payment Nudges
-            </Button>
-            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
-              Bulk upload
-            </Button>
+            <ResponsiveToolbarButton icon={<NotificationsActiveOutlinedIcon />} label="Send Payment Nudges" onClick={() => setNudgesOpen(true)} />
+            <ResponsiveToolbarButton icon={<UploadFileIcon />} label="Bulk upload" onClick={() => setBulkUploadOpen(true)} />
           </>
         }
       />

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
-import { Button, Chip } from '@mui/material'
+import { Chip } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFileOutlined'
 import EventSeatIcon from '@mui/icons-material/EventSeatOutlined'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
+import { ResponsiveToolbarButton } from '@/shared/crud/ResponsiveToolbarButton'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { LockerBulkUploadDialog } from './LockerBulkUploadDialog'
 import { AvailableLockersDialog } from './AvailableLockersDialog'
+import { LockerMobileCard } from './LockerMobileCard'
 import { useListLockersQuery, useCreateLockerMutation, useUpdateLockerMutation, useDeleteLockerMutation, type Locker } from './lockersApi'
 
 const statusColors: Record<string, 'success' | 'default' | 'warning' | 'error'> = {
@@ -137,14 +139,21 @@ export function LockersPage() {
           setEditing(row)
         }}
         onDelete={(row) => setDeleting(row)}
+        mobileInlineActions
+        renderMobileCard={(locker) => (
+          <LockerMobileCard
+            locker={locker}
+            onEdit={() => {
+              setServerError(null)
+              setEditing(locker)
+            }}
+            onDelete={() => setDeleting(locker)}
+          />
+        )}
         extraToolbar={
           <>
-            <Button variant="outlined" startIcon={<EventSeatIcon />} onClick={() => setAvailableOpen(true)}>
-              Available lockers
-            </Button>
-            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
-              Bulk upload
-            </Button>
+            <ResponsiveToolbarButton icon={<EventSeatIcon />} label="Available lockers" onClick={() => setAvailableOpen(true)} />
+            <ResponsiveToolbarButton icon={<UploadFileIcon />} label="Bulk upload" onClick={() => setBulkUploadOpen(true)} />
           </>
         }
       />

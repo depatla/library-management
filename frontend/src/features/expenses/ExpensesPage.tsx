@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
-import { Button } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
+import { ResponsiveToolbarButton } from '@/shared/crud/ResponsiveToolbarButton'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
+import { ExpenseMobileCard } from './ExpenseMobileCard'
 import {
   useListExpensesQuery,
   useCreateExpenseMutation,
@@ -139,17 +140,26 @@ export function ExpensesPage() {
           setEditing(row)
         }}
         onDelete={(row) => setDeleting(row)}
+        mobileInlineActions
+        renderMobileCard={(expense) => (
+          <ExpenseMobileCard
+            expense={expense}
+            onEdit={() => {
+              setServerError(null)
+              setEditing(expense)
+            }}
+            onDelete={() => setDeleting(expense)}
+          />
+        )}
         extraToolbar={
-          <Button
-            size="small"
-            startIcon={<AddIcon />}
+          <ResponsiveToolbarButton
+            icon={<AddIcon />}
+            label="New category"
             onClick={() => {
               setServerError(null)
               setCategoryDialogOpen(true)
             }}
-          >
-            New category
-          </Button>
+          />
         }
       />
 

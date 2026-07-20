@@ -36,7 +36,14 @@ export function AiAssistantPage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)' }}>
+    <Box
+      sx={{
+        p: { xs: 2, md: 3 },
+        display: 'flex',
+        flexDirection: 'column',
+        height: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
+      }}
+    >
       <Typography variant="h5" fontWeight={700} gutterBottom>
         AI Assistant
       </Typography>

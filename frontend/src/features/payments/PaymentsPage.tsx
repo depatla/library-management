@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { useListPaymentsQuery, useCreatePaymentMutation, useDeletePaymentMutation, type Payment } from './paymentsApi'
 import { useListStudentsQuery } from '@/features/students/studentsApi'
+import { PaymentMobileCard } from './PaymentMobileCard'
 
 const createSchema = z
   .object({
@@ -188,11 +189,14 @@ export function PaymentsPage() {
         addLabel="Record payment"
         onView={(row) => setViewing(row)}
         onDelete={(row) => setDeleting(row)}
+        renderMobileCard={(payment) => (
+          <PaymentMobileCard payment={payment} onView={() => setViewing(payment)} onDelete={() => setDeleting(payment)} />
+        )}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by student name…"
         extraToolbar={
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ width: '100%' }}>
             <TextField
               size="small"
               label="From date"

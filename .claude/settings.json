@@ -72,10 +72,20 @@
       "Bash(pip config *)",
       "Bash(env)",
       "Bash(sips -s format png /tmp/available-cabins-test.pdf --out /tmp/available-cabins-test.png)",
-      "Bash(python -c \"from app.modules.lockers import router, service, repository, schemas; print\\('ok'\\)\")"
+      "Bash(python -c \"from app.modules.lockers import router, service, repository, schemas; print\\('ok'\\)\")",
+      "Bash(curl -sv -o /dev/null http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(nohup npm run dev -- --host 127.0.0.1 --port 5173)",
+      "Bash(disown)",
+      "Bash(nohup npm run dev -- --host 127.0.0.1 --port 5180)",
+      "Bash(nohup npx vite --port 41823)",
+      "Bash(nohup npx vite --port 41900)",
+      "Bash(rm -f /tmp/vite-dev.log /tmp/vite-dev2.log /tmp/vite-dev3.log)"
     ],
     "additionalDirectories": [
-      "/private/tmp/repo-check"
+      "/private/tmp/repo-check",
+      "/private/tmp"
     ]
   }
 }
