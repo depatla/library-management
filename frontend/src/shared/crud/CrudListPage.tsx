@@ -3,6 +3,7 @@ import { alpha } from '@mui/material/styles'
 import {
   Box,
   Button,
+  CircularProgress,
   IconButton,
   InputAdornment,
   Paper,
@@ -17,7 +18,10 @@ import SearchIcon from '@mui/icons-material/Search'
 import EditIcon from '@mui/icons-material/EditOutlined'
 import DeleteIcon from '@mui/icons-material/DeleteOutline'
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { motion } from 'framer-motion'
+import { useIsMobile } from '@/shared/hooks/useIsMobile'
 
 export interface CrudListPageProps<T extends { id: string }> {
   title: string
@@ -41,6 +45,8 @@ export interface CrudListPageProps<T extends { id: string }> {
   hideActions?: boolean
   /** Rows matching this predicate get a highlighted (light red) background — e.g. flagging expired students. */
   highlightRowIf?: (row: T) => boolean
+  /** Opt-in phone card layout. When set, viewports <600px render this instead of the DataGrid; all other pages keep the grid unchanged. */
+  renderMobileCard?: (row: T) => ReactNode
 }
 
 export function CrudListPage<T extends { id: string }>({
@@ -64,7 +70,9 @@ export function CrudListPage<T extends { id: string }>({
   extraToolbar,
   hideActions = false,
   highlightRowIf,
+  renderMobileCard,
 }: CrudListPageProps<T>) {
+  const isMobile = useIsMobile()
   const actionColumn: GridColDef<T>[] =
     hideActions || (!onView && !onEdit && !onDelete)
       ? []
@@ -149,30 +157,70 @@ export function CrudListPage<T extends { id: string }>({
         {extraToolbar}
       </Stack>
 
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        <DataGrid
-          rows={rows}
-          columns={[...columns, ...actionColumn]}
-          rowCount={rowCount}
-          loading={loading}
-          paginationMode="server"
-          paginationModel={paginationModel}
-          onPaginationModelChange={onPaginationModelChange}
-          pageSizeOptions={pageSizeOptions}
-          disableRowSelectionOnClick
-          autoHeight
-          getRowClassName={(params) => (highlightRowIf?.(params.row) ? 'row-highlight' : '')}
-          sx={{
-            border: 'none',
-            '--DataGrid-overlayHeight': '200px',
-            '& .MuiDataGrid-columnHeaders': { bgcolor: 'action.hover' },
-            '& .row-highlight': {
-              bgcolor: (theme) => alpha(theme.palette.error.main, 0.12),
-              '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.18) },
-            },
-          }}
-        />
-      </Paper>
+      {isMobile && renderMobileCard ? (
+        <Stack spacing={1.5}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : rows.length === 0 ? (
+            <Typography color="text.secondary" align="center" sx={{ py: 5 }}>
+              No records found
+            </Typography>
+          ) : (
+            rows.map((row) => <Box key={row.id}>{renderMobileCard(row)}</Box>)
+          )}
+
+          {rowCount > paginationModel.pageSize && (
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pt: 0.5 }}>
+              <Typography variant="caption" color="text.secondary">
+                Page {paginationModel.page + 1} of {Math.max(1, Math.ceil(rowCount / paginationModel.pageSize))}
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <IconButton
+                  size="small"
+                  disabled={paginationModel.page === 0}
+                  onClick={() => onPaginationModelChange({ ...paginationModel, page: paginationModel.page - 1 })}
+                >
+                  <ChevronLeftIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  disabled={(paginationModel.page + 1) * paginationModel.pageSize >= rowCount}
+                  onClick={() => onPaginationModelChange({ ...paginationModel, page: paginationModel.page + 1 })}
+                >
+                  <ChevronRightIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+            </Stack>
+          )}
+        </Stack>
+      ) : (
+        <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+          <DataGrid
+            rows={rows}
+            columns={[...columns, ...actionColumn]}
+            rowCount={rowCount}
+            loading={loading}
+            paginationMode="server"
+            paginationModel={paginationModel}
+            onPaginationModelChange={onPaginationModelChange}
+            pageSizeOptions={pageSizeOptions}
+            disableRowSelectionOnClick
+            autoHeight
+            getRowClassName={(params) => (highlightRowIf?.(params.row) ? 'row-highlight' : '')}
+            sx={{
+              border: 'none',
+              '--DataGrid-overlayHeight': '200px',
+              '& .MuiDataGrid-columnHeaders': { bgcolor: 'action.hover' },
+              '& .row-highlight': {
+                bgcolor: (theme) => alpha(theme.palette.error.main, 0.12),
+                '&:hover': { bgcolor: (theme) => alpha(theme.palette.error.main, 0.18) },
+              },
+            }}
+          />
+        </Paper>
+      )}
     </Box>
   )
 }

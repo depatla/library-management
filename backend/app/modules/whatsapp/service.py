@@ -18,12 +18,12 @@ from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioRestException
 
 from app.core.config import get_settings
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import ConflictError, DomainError, NotFoundError
 from app.core.pagination import Page, PageParams, make_page
 from app.modules.whatsapp import repository
 from app.modules.whatsapp.client import list_content_templates as _list_content_templates
 from app.modules.whatsapp.client import send_whatsapp
-from app.modules.whatsapp.schemas import ContentTemplateOut, MessageOut, TemplateOut, TwilioConfigOut
+from app.modules.whatsapp.schemas import BulkSendResult, BulkSendRowResult, ContentTemplateOut, MessageOut, TemplateOut, TwilioConfigOut
 
 settings = get_settings()
 
@@ -185,6 +185,33 @@ def send_template(db: Session, *, library_id: UUID, student_id: UUID, template_t
 
     row = repository.get_message(db, message_id)
     return MessageOut(**row)
+
+
+def send_bulk(db: Session, *, library_id: UUID, template_type: str, student_ids: list[UUID]) -> BulkSendResult:
+    """Best-effort batch send — one student's failure (missing phone, empty
+    variable, Twilio error) must not stop the rest of the batch. Config/template
+    existence is checked once upfront so a single misconfiguration doesn't
+    surface as N identical per-row failures."""
+    config = repository.get_config(db, library_id)
+    if not config or not config["is_active"]:
+        raise ConflictError("WhatsApp is not configured for this library")
+    if not repository.get_active_template_for_type(db, library_id=library_id, template_type=template_type):
+        raise ConflictError(f"No active template configured for {template_type}")
+
+    results: list[BulkSendRowResult] = []
+    for student_id in student_ids:
+        student = repository.get_student_for_message(db, library_id=library_id, student_id=student_id)
+        name = student["full_name"] if student else None
+        try:
+            send_template(db, library_id=library_id, student_id=student_id, template_type=template_type)
+            results.append(BulkSendRowResult(student_id=student_id, name=name, success=True, error=None))
+        except Exception as exc:
+            db.rollback()
+            error = exc.message if isinstance(exc, DomainError) else str(exc)
+            results.append(BulkSendRowResult(student_id=student_id, name=name, success=False, error=error))
+
+    sent_count = sum(1 for r in results if r.success)
+    return BulkSendResult(sent_count=sent_count, failed_count=len(results) - sent_count, results=results)
 
 
 def list_messages(db: Session, *, library_id: UUID, params: PageParams) -> Page[MessageOut]:

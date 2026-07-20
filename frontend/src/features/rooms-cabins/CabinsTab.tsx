@@ -8,6 +8,7 @@ import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { CabinBulkUploadDialog } from './CabinBulkUploadDialog'
+import { CabinMobileCard } from './CabinMobileCard'
 import {
   useListCabinsQuery,
   useCreateCabinMutation,
@@ -141,6 +142,16 @@ export function CabinsTab({ libraryId }: { libraryId: string }) {
           setEditing(row)
         }}
         onDelete={(row) => setDeleting(row)}
+        renderMobileCard={(cabin) => (
+          <CabinMobileCard
+            cabin={cabin}
+            onEdit={() => {
+              setServerError(null)
+              setEditing(cabin)
+            }}
+            onDelete={() => setDeleting(cabin)}
+          />
+        )}
         extraToolbar={
           <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
             Bulk upload

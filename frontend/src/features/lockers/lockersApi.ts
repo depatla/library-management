@@ -33,6 +33,11 @@ export interface LockerBulkUploadResult {
   errors: LockerBulkUploadRowError[]
 }
 
+export interface AvailableLocker {
+  locker_number: string
+  monthly_rent: number
+}
+
 export async function downloadLockerSampleCsv(libraryId: string): Promise<void> {
   const response = await apiClient.get(`/libraries/${libraryId}/lockers/bulk-upload/sample`, {
     responseType: 'blob',
@@ -41,6 +46,20 @@ export async function downloadLockerSampleCsv(libraryId: string): Promise<void> 
   const link = document.createElement('a')
   link.href = url
   link.download = 'lockers_sample.csv'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+export async function downloadAvailableLockersPdf(libraryId: string): Promise<void> {
+  const response = await apiClient.get(`/libraries/${libraryId}/lockers/available/pdf`, {
+    responseType: 'blob',
+  })
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'available-lockers.pdf'
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -77,6 +96,10 @@ export const lockersApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ['Locker'],
     }),
+    listAvailableLockers: builder.query<AvailableLocker[], string>({
+      query: (libraryId) => ({ url: `/libraries/${libraryId}/lockers/available`, method: 'GET' }),
+      providesTags: ['Locker'],
+    }),
   }),
 })
 
@@ -86,4 +109,5 @@ export const {
   useUpdateLockerMutation,
   useDeleteLockerMutation,
   useBulkUploadLockersMutation,
+  useListAvailableLockersQuery,
 } = lockersApi

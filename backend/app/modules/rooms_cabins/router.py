@@ -10,6 +10,7 @@ from app.core.exceptions import ValidationDomainError
 from app.core.pagination import Page, PageQuery
 from app.modules.rooms_cabins import service
 from app.modules.rooms_cabins.schemas import (
+    AvailableCabinsGroupOut,
     BulkSeasonalFlipRequest,
     CabinBulkUploadResult,
     CabinCreate,
@@ -63,6 +64,21 @@ def list_cabins(
     search: str | None = None,
 ) -> Page[CabinOut]:
     return service.list_cabins(db, library_id=library_id, room_category_id=room_category_id, status=status, search=search, params=page_params)
+
+
+@router.get("/cabins/available", response_model=list[AvailableCabinsGroupOut])
+def list_available_cabins(library_id: UUID, db: TenantDb) -> list[AvailableCabinsGroupOut]:
+    return service.list_available_cabins(db, library_id)
+
+
+@router.get("/cabins/available/pdf", response_class=Response)
+def download_available_cabins_pdf(library_id: UUID, db: TenantDb) -> Response:
+    pdf_bytes = service.build_available_cabins_pdf(db, library_id)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=available-cabins.pdf"},
+    )
 
 
 @router.post("/cabins", response_model=CabinOut, status_code=201)

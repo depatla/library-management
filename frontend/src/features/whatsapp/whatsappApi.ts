@@ -68,6 +68,19 @@ export interface WhatsappMessage {
   sent_at: string | null
 }
 
+export interface BulkSendRowResult {
+  student_id: string
+  name: string | null
+  success: boolean
+  error: string | null
+}
+
+export interface BulkSendResult {
+  sent_count: number
+  failed_count: number
+  results: BulkSendRowResult[]
+}
+
 export const whatsappApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getWhatsappConfig: builder.query<TwilioConfig | null, string>({
@@ -109,6 +122,14 @@ export const whatsappApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['WhatsappMessage'],
     }),
+    sendBulkWhatsappMessages: builder.mutation<BulkSendResult, { libraryId: string; templateType: TemplateType; studentIds: string[] }>({
+      query: ({ libraryId, templateType, studentIds }) => ({
+        url: `/libraries/${libraryId}/whatsapp/send-bulk`,
+        method: 'POST',
+        data: { template_type: templateType, student_ids: studentIds },
+      }),
+      invalidatesTags: ['WhatsappMessage', 'Student'],
+    }),
     listWhatsappMessages: builder.query<Page<WhatsappMessage>, { libraryId: string; page: number; pageSize: number }>({
       query: ({ libraryId, page, pageSize }) => ({
         url: `/libraries/${libraryId}/whatsapp/messages`,
@@ -129,5 +150,6 @@ export const {
   useUpdateTemplateMutation,
   useDeleteTemplateMutation,
   useSendWhatsappMessageMutation,
+  useSendBulkWhatsappMessagesMutation,
   useListWhatsappMessagesQuery,
 } = whatsappApi

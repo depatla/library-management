@@ -9,7 +9,7 @@ from app.core.deps import TenantDb
 from app.core.exceptions import ValidationDomainError
 from app.core.pagination import Page, PageQuery
 from app.modules.lockers import service
-from app.modules.lockers.schemas import LockerBulkUploadResult, LockerCreate, LockerOut, LockerUpdate
+from app.modules.lockers.schemas import AvailableLockerOut, LockerBulkUploadResult, LockerCreate, LockerOut, LockerUpdate
 
 router = APIRouter(prefix="/libraries/{library_id}/lockers", tags=["lockers"])
 
@@ -17,6 +17,21 @@ router = APIRouter(prefix="/libraries/{library_id}/lockers", tags=["lockers"])
 @router.get("", response_model=Page[LockerOut])
 def list_lockers(library_id: UUID, db: TenantDb, page_params: PageQuery, status: str | None = None) -> Page[LockerOut]:
     return service.list_lockers(db, library_id=library_id, status=status, params=page_params)
+
+
+@router.get("/available", response_model=list[AvailableLockerOut])
+def list_available_lockers(library_id: UUID, db: TenantDb) -> list[AvailableLockerOut]:
+    return service.list_available_lockers(db, library_id)
+
+
+@router.get("/available/pdf", response_class=Response)
+def download_available_lockers_pdf(library_id: UUID, db: TenantDb) -> Response:
+    pdf_bytes = service.build_available_lockers_pdf(db, library_id)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=available-lockers.pdf"},
+    )
 
 
 @router.post("", response_model=LockerOut, status_code=201)

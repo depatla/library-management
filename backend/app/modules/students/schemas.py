@@ -46,6 +46,27 @@ class AssignLockerRequest(BaseModel):
     locker_id: UUID | None = None
 
 
+class StudentBulkUploadRowError(BaseModel):
+    row_number: int
+    name: str | None
+    error: str
+
+
+class StudentBulkUploadResult(BaseModel):
+    created_count: int
+    error_count: int
+    errors: list[StudentBulkUploadRowError]
+
+
+class PendingPaymentStudentOut(BaseModel):
+    id: UUID
+    full_name: str
+    phone: str
+    whatsapp_number: str | None
+    cabin_number: str | None
+    expiry_date: date
+
+
 class StudentOut(BaseModel):
     id: UUID
     library_id: UUID

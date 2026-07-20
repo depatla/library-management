@@ -23,6 +23,29 @@ def list_lockers(db: Session, *, library_id: UUID, status: str | None, limit: in
     return [dict(r) for r in rows], total
 
 
+def list_available_lockers(db: Session, *, library_id: UUID) -> list[dict]:
+    rows = db.execute(
+        text(
+            """
+            SELECT locker_number, monthly_rent
+            FROM lockers
+            WHERE library_id = :library_id AND status = 'available'
+            ORDER BY locker_number
+            """
+        ),
+        {"library_id": str(library_id)},
+    ).mappings().all()
+    return [dict(r) for r in rows]
+
+
+def get_library_header(db: Session, library_id: UUID) -> dict | None:
+    row = db.execute(
+        text("SELECT name, city FROM libraries WHERE id = :id"),
+        {"id": str(library_id)},
+    ).mappings().first()
+    return dict(row) if row else None
+
+
 def get_locker(db: Session, *, library_id: UUID, locker_id: UUID) -> dict | None:
     row = db.execute(
         text("SELECT id, library_id, locker_number, monthly_rent, status FROM lockers WHERE id = :id AND library_id = :library_id"),

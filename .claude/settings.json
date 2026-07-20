@@ -60,7 +60,19 @@
       "Bash(git ls-remote *)",
       "Bash(gh auth *)",
       "Bash(rm -rf /tmp/repo-check *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(pg_isready -h localhost -p 5444)",
+      "Read(//Applications/**)",
+      "Bash(osascript -e 'tell application \"System Events\" to \\(name of processes\\) contains \"Postgres\"')",
+      "Bash(open -a Postgres.app)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)",
+      "Bash(PGPASSWORD=12345 psql -h localhost -p 5444 -U postgres -d study_library -c '\\\\dt')",
+      "Bash(pip config *)",
+      "Bash(env)",
+      "Bash(sips -s format png /tmp/available-cabins-test.pdf --out /tmp/available-cabins-test.png)",
+      "Bash(python -c \"from app.modules.lockers import router, service, repository, schemas; print\\('ok'\\)\")"
     ],
     "additionalDirectories": [
       "/private/tmp/repo-check"

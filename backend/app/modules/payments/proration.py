@@ -7,6 +7,8 @@ period_end), weighted by the number of days each month is covered.
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
+from app.core.exceptions import ValidationDomainError
+
 
 def _month_start(d: date) -> date:
     return d.replace(day=1)
@@ -22,7 +24,7 @@ def compute_allocations(amount: Decimal, period_start: date, period_end: date) -
     """Returns [(period_month, allocated_amount, is_prorated), ...] summing exactly to `amount`."""
     total_days = (period_end - period_start).days
     if total_days <= 0:
-        raise ValueError("period_end must be after period_start")
+        raise ValidationDomainError("period_end must be after period_start")
 
     months: list[date] = []
     cursor = _month_start(period_start)

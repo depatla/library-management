@@ -10,6 +10,7 @@ import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { CabinBulkUploadDialog } from './CabinBulkUploadDialog'
+import { RoomCategoryMobileCard } from './RoomCategoryMobileCard'
 import {
   useListRoomCategoriesQuery,
   useCreateRoomCategoryMutation,
@@ -164,6 +165,17 @@ export function RoomCategoriesTab({ libraryId }: { libraryId: string }) {
         }}
         onDelete={(row) => setDeleting(row)}
         hideActions={false}
+        renderMobileCard={(category) => (
+          <RoomCategoryMobileCard
+            category={category}
+            onToggleAc={() => toggleAc({ libraryId, categoryId: category.id, isAc: !category.is_ac }).catch(() => null)}
+            onEdit={() => {
+              setServerError(null)
+              setEditing(category)
+            }}
+            onDelete={() => setDeleting(category)}
+          />
+        )}
         extraToolbar={
           <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
             Bulk upload cabins

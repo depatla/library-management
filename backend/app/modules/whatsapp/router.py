@@ -8,6 +8,8 @@ from app.core.deps import TenantDb
 from app.core.pagination import Page, PageQuery
 from app.modules.whatsapp import service
 from app.modules.whatsapp.schemas import (
+    BulkSendRequest,
+    BulkSendResult,
     ContentTemplateOut,
     MessageOut,
     SendMessageRequest,
@@ -59,6 +61,11 @@ def delete_template(library_id: UUID, template_id: UUID, db: TenantDb) -> None:
 @router.post("/send", response_model=MessageOut, status_code=201)
 def send_message(library_id: UUID, payload: SendMessageRequest, db: TenantDb) -> MessageOut:
     return service.send_template(db, library_id=library_id, student_id=payload.student_id, template_type=payload.template_type)
+
+
+@router.post("/send-bulk", response_model=BulkSendResult)
+def send_bulk_messages(library_id: UUID, payload: BulkSendRequest, db: TenantDb) -> BulkSendResult:
+    return service.send_bulk(db, library_id=library_id, template_type=payload.template_type, student_ids=payload.student_ids)
 
 
 @router.get("/messages", response_model=Page[MessageOut])

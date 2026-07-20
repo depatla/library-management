@@ -56,6 +56,18 @@ class CabinOut(BaseModel):
     status: str
 
 
+class AvailableCabinOut(BaseModel):
+    cabin_number: str
+    capacity: int
+
+
+class AvailableCabinsGroupOut(BaseModel):
+    category_name: str
+    color_code: str | None
+    is_ac: bool
+    cabins: list[AvailableCabinOut]
+
+
 class CabinBulkUploadRowError(BaseModel):
     row_number: int
     cabin_number: str | None

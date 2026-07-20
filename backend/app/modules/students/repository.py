@@ -212,6 +212,46 @@ def locker_available(db: Session, *, library_id: UUID, locker_id: UUID) -> bool:
     )
 
 
+def existing_phones(db: Session, *, library_id: UUID, phones: list[str]) -> set[str]:
+    if not phones:
+        return set()
+    rows = db.execute(
+        text(
+            "SELECT phone FROM students WHERE library_id = :library_id AND phone = ANY(:phones) AND deleted_at IS NULL"
+        ),
+        {"library_id": str(library_id), "phones": phones},
+    ).all()
+    return {r[0] for r in rows}
+
+
+def bulk_create_students(db: Session, *, library_id: UUID, created_by: UUID, rows: list[dict]) -> int:
+    """Insert many students in one round-trip. Each row dict has
+    full_name, phone, email, gender. Caller must have already validated
+    uniqueness."""
+    if not rows:
+        return 0
+    db.execute(
+        text(
+            """
+            INSERT INTO students (library_id, full_name, phone, email, gender, created_by)
+            VALUES (:library_id, :full_name, :phone, :email, :gender, :created_by)
+            """
+        ),
+        [
+            {
+                "library_id": str(library_id),
+                "full_name": row["full_name"],
+                "phone": row["phone"],
+                "email": row["email"],
+                "gender": row["gender"],
+                "created_by": str(created_by),
+            }
+            for row in rows
+        ],
+    )
+    return len(rows)
+
+
 def new_students_this_month_count(db: Session, library_id: UUID) -> int:
     row = db.execute(
         text(
@@ -252,6 +292,29 @@ def expire_overdue_students(db: Session) -> int:
         )
     )
     return result.rowcount
+
+
+def list_pending_payment_students(db: Session, *, library_id: UUID) -> list[dict]:
+    """Students whose derived expiry_date has already passed — the same
+    'pending payment' set the Students grid highlights in red."""
+    rows = db.execute(
+        text(
+            """
+            SELECT s.id, s.full_name, s.phone, s.whatsapp_number, c.cabin_number, pay.expiry_date
+            FROM students s
+            LEFT JOIN cabins c ON c.id = s.cabin_id
+            JOIN (
+                SELECT student_id, MAX(period_end) AS expiry_date
+                FROM payments
+                GROUP BY student_id
+            ) pay ON pay.student_id = s.id
+            WHERE s.library_id = :library_id AND s.deleted_at IS NULL AND pay.expiry_date < CURRENT_DATE
+            ORDER BY pay.expiry_date, s.full_name
+            """
+        ),
+        {"library_id": str(library_id)},
+    ).mappings().all()
+    return [dict(r) for r in rows]
 
 
 def students_expiring_within(db: Session, *, library_id: UUID, days: int) -> list[dict]:

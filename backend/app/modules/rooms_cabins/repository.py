@@ -138,7 +138,7 @@ def list_cabins(
             WHERE c.library_id = :library_id
               AND (CAST(:room_category_id AS UUID) IS NULL OR c.room_category_id = CAST(:room_category_id AS UUID))
               AND (CAST(:status AS cabin_status) IS NULL OR c.status = CAST(:status AS cabin_status))
-              AND (:search IS NULL OR c.cabin_number ILIKE '%' || :search || '%' OR rc.name ILIKE '%' || :search || '%')
+              AND (CAST(:search AS TEXT) IS NULL OR c.cabin_number ILIKE '%' || CAST(:search AS TEXT) || '%' OR rc.name ILIKE '%' || CAST(:search AS TEXT) || '%')
             ORDER BY rc.display_order, c.cabin_number
             LIMIT :limit OFFSET :offset
             """
@@ -154,6 +154,31 @@ def list_cabins(
     ).mappings().all()
     total = rows[0]["total_count"] if rows else 0
     return [dict(r) for r in rows], total
+
+
+def list_available_cabins(db: Session, *, library_id: UUID) -> list[dict]:
+    rows = db.execute(
+        text(
+            """
+            SELECT rc.name AS category_name, rc.color_code, rc.is_ac,
+                   c.cabin_number, c.capacity
+            FROM cabins c
+            JOIN room_categories rc ON rc.id = c.room_category_id
+            WHERE c.library_id = :library_id AND c.status = 'available'
+            ORDER BY rc.display_order, c.cabin_number
+            """
+        ),
+        {"library_id": str(library_id)},
+    ).mappings().all()
+    return [dict(r) for r in rows]
+
+
+def get_library_header(db: Session, library_id: UUID) -> dict | None:
+    row = db.execute(
+        text("SELECT name, city FROM libraries WHERE id = :id"),
+        {"id": str(library_id)},
+    ).mappings().first()
+    return dict(row) if row else None
 
 
 def get_cabin(db: Session, *, library_id: UUID, cabin_id: UUID) -> dict | None:

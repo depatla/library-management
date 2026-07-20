@@ -79,6 +79,24 @@ class SendMessageRequest(BaseModel):
     template_type: str = Field(pattern="^(welcome|payment_reminder|renewal_reminder|expiry_reminder|thank_you|custom)$")
 
 
+class BulkSendRequest(BaseModel):
+    template_type: str = Field(pattern="^(welcome|payment_reminder|renewal_reminder|expiry_reminder|thank_you|custom)$")
+    student_ids: list[UUID] = Field(min_length=1)
+
+
+class BulkSendRowResult(BaseModel):
+    student_id: UUID
+    name: str | None
+    success: bool
+    error: str | None
+
+
+class BulkSendResult(BaseModel):
+    sent_count: int
+    failed_count: int
+    results: list[BulkSendRowResult]
+
+
 class MessageOut(BaseModel):
     id: UUID
     library_id: UUID

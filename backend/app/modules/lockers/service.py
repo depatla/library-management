@@ -2,17 +2,23 @@
 
 import csv
 import io
+from datetime import date
 from uuid import UUID
 
+from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationDomainError
 from app.core.pagination import Page, PageParams, make_page
 from app.modules.lockers import repository
-from app.modules.lockers.schemas import LockerBulkUploadResult, LockerOut
+from app.modules.lockers.schemas import AvailableLockerOut, LockerBulkUploadResult, LockerOut
 
 CSV_COLUMNS = ["locker_number", "monthly_rent"]
+
+_PAGE_W, _PAGE_H = 1240, 1754
+_MARGIN = 70
+_CONTENT_W = _PAGE_W - 2 * _MARGIN
 
 
 def _out(row: dict) -> LockerOut:
@@ -22,6 +28,82 @@ def _out(row: dict) -> LockerOut:
 def list_lockers(db: Session, *, library_id: UUID, status: str | None, params: PageParams) -> Page[LockerOut]:
     rows, total = repository.list_lockers(db, library_id=library_id, status=status, limit=params.limit, offset=params.offset)
     return make_page([_out(r) for r in rows], total, params)
+
+
+def list_available_lockers(db: Session, library_id: UUID) -> list[AvailableLockerOut]:
+    rows = repository.list_available_lockers(db, library_id=library_id)
+    return [AvailableLockerOut(locker_number=r["locker_number"], monthly_rent=r["monthly_rent"]) for r in rows]
+
+
+def build_available_lockers_pdf(db: Session, library_id: UUID) -> bytes:
+    """Renders via Pillow, same approach as rooms_cabins.build_available_cabins_pdf —
+    no dedicated PDF library available in this environment. Lockers have no
+    category grouping, so available numbers are tiled in a fixed-size grid
+    instead of category-banded columns."""
+    library = repository.get_library_header(db, library_id) or {}
+    lockers = list_available_lockers(db, library_id)
+
+    title_font = ImageFont.load_default(size=40)
+    city_font = ImageFont.load_default(size=20)
+    subtitle_font = ImageFont.load_default(size=26)
+    meta_font = ImageFont.load_default(size=16)
+    chip_font = ImageFont.load_default(size=18)
+    empty_font = ImageFont.load_default(size=18)
+
+    pages: list[Image.Image] = []
+
+    def new_page() -> tuple[Image.Image, ImageDraw.ImageDraw]:
+        page = Image.new("RGB", (_PAGE_W, _PAGE_H), "white")
+        return page, ImageDraw.Draw(page)
+
+    img, draw = new_page()
+    y = _MARGIN
+
+    def draw_centered(text: str, font: ImageFont.FreeTypeFont, y: int, fill: tuple[int, int, int], bold: bool = False) -> int:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        w = bbox[2] - bbox[0]
+        draw.text(((_PAGE_W - w) / 2, y - bbox[1]), text, font=font, fill=fill, stroke_width=1 if bold else 0, stroke_fill=fill)
+        return bbox[3] - bbox[1]
+
+    y += draw_centered(library.get("name") or "Library", title_font, y, fill=(26, 35, 126), bold=True) + 10
+    if library.get("city"):
+        y += draw_centered(library["city"], city_font, y, fill=(110, 110, 110)) + 14
+    y += draw_centered("Available Lockers", subtitle_font, y, fill=(30, 30, 30), bold=True) + 6
+    y += draw_centered(f"Generated on {date.today().strftime('%d %b %Y')}", meta_font, y, fill=(140, 140, 140)) + 20
+
+    if not lockers:
+        draw.text((_MARGIN, y + 10), "No lockers are currently available.", font=empty_font, fill=(30, 30, 30))
+    else:
+        y += draw_centered(f"{len(lockers)} locker{'s' if len(lockers) != 1 else ''} available", meta_font, y, fill=(90, 90, 90)) + 24
+
+        cols = 6
+        col_gap = 16
+        col_w = (_CONTENT_W - (cols - 1) * col_gap) / cols
+        item_h = 46
+        row_gap = 12
+
+        col = 0
+        for locker in lockers:
+            if col == 0 and y + item_h > _PAGE_H - _MARGIN and y > _MARGIN:
+                pages.append(img)
+                img, draw = new_page()
+                y = _MARGIN
+
+            x = _MARGIN + col * (col_w + col_gap)
+            draw.rounded_rectangle([x, y, x + col_w, y + item_h], radius=6, outline=(69, 90, 100), width=2, fill=(245, 247, 250))
+            bbox = draw.textbbox((0, 0), locker.locker_number, font=chip_font)
+            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            draw.text((x + (col_w - tw) / 2, y + (item_h - th) / 2 - bbox[1]), locker.locker_number, font=chip_font, fill=(30, 30, 30))
+
+            col += 1
+            if col == cols:
+                col = 0
+                y += item_h + row_gap
+
+    pages.append(img)
+    buffer = io.BytesIO()
+    pages[0].save(buffer, format="PDF", save_all=True, append_images=pages[1:])
+    return buffer.getvalue()
 
 
 def create_locker(db: Session, *, library_id: UUID, payload) -> LockerOut:

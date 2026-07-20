@@ -2,15 +2,19 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 import dayjs from 'dayjs'
-import { Chip, IconButton, Tooltip } from '@mui/material'
+import { Chip, IconButton, Tooltip, Button } from '@mui/material'
 import MeetingRoomOutlinedIcon from '@mui/icons-material/MeetingRoomOutlined'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import PaymentOutlinedIcon from '@mui/icons-material/PaymentOutlined'
+import UploadFileIcon from '@mui/icons-material/UploadFileOutlined'
+import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
+import { StudentBulkUploadDialog } from './StudentBulkUploadDialog'
+import { SendPaymentNudgesDialog } from './SendPaymentNudgesDialog'
 import {
   useListStudentsQuery,
   useCreateStudentMutation,
@@ -92,6 +96,8 @@ const recordPaymentSchema = z
   .superRefine((values, ctx) => {
     if (values.frequency === 'daily' && !values.period_end) {
       ctx.addIssue({ code: 'custom', message: 'End date is required', path: ['period_end'] })
+    } else if (values.frequency === 'daily' && values.period_end! <= values.period_start) {
+      ctx.addIssue({ code: 'custom', message: 'End date must be after start date', path: ['period_end'] })
     }
     if (values.frequency === 'monthly' && !values.number_of_months) {
       ctx.addIssue({ code: 'custom', message: 'Number of months is required', path: ['number_of_months'] })
@@ -180,6 +186,8 @@ export function StudentsPage() {
   const [removingLockerFrom, setRemovingLockerFrom] = useState<Student | null>(null)
   const [recordingPaymentFor, setRecordingPaymentFor] = useState<Student | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false)
+  const [nudgesOpen, setNudgesOpen] = useState(false)
 
   const cabinOptions = (availableCabins?.items ?? []).map((c) => ({ value: c.id, label: `${c.room_category_name} - ${c.cabin_number}` }))
   const lockerOptions = (availableLockers?.items ?? []).map((l) => ({ value: l.id, label: l.locker_number }))
@@ -414,7 +422,21 @@ export function StudentsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search by name or phone…"
+        extraToolbar={
+          <>
+            <Button variant="outlined" startIcon={<NotificationsActiveOutlinedIcon />} onClick={() => setNudgesOpen(true)}>
+              Send Payment Nudges
+            </Button>
+            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
+              Bulk upload
+            </Button>
+          </>
+        }
       />
+
+      <StudentBulkUploadDialog open={bulkUploadOpen} libraryId={libraryId!} onClose={() => setBulkUploadOpen(false)} />
+
+      <SendPaymentNudgesDialog open={nudgesOpen} libraryId={libraryId!} onClose={() => setNudgesOpen(false)} />
 
       <CrudFormDialog<CreateForm>
         open={dialogOpen}

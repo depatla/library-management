@@ -3,12 +3,14 @@ import { useParams } from 'react-router-dom'
 import { z } from 'zod'
 import { Button, Chip } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFileOutlined'
+import EventSeatIcon from '@mui/icons-material/EventSeatOutlined'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { CrudListPage } from '@/shared/crud/CrudListPage'
 import { CrudFormDialog, type CrudField } from '@/shared/crud/CrudFormDialog'
 import { ConfirmDialog } from '@/shared/crud/ConfirmDialog'
 import { useCrudSnackbar, extractErrorMessage } from '@/shared/crud/useCrudSnackbar'
 import { LockerBulkUploadDialog } from './LockerBulkUploadDialog'
+import { AvailableLockersDialog } from './AvailableLockersDialog'
 import { useListLockersQuery, useCreateLockerMutation, useUpdateLockerMutation, useDeleteLockerMutation, type Locker } from './lockersApi'
 
 const statusColors: Record<string, 'success' | 'default' | 'warning' | 'error'> = {
@@ -68,6 +70,7 @@ export function LockersPage() {
   const [deleting, setDeleting] = useState<Locker | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false)
+  const [availableOpen, setAvailableOpen] = useState(false)
 
   const columns: GridColDef<Locker>[] = [
     { field: 'locker_number', headerName: 'Locker #', flex: 1, minWidth: 120 },
@@ -135,13 +138,19 @@ export function LockersPage() {
         }}
         onDelete={(row) => setDeleting(row)}
         extraToolbar={
-          <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
-            Bulk upload
-          </Button>
+          <>
+            <Button variant="outlined" startIcon={<EventSeatIcon />} onClick={() => setAvailableOpen(true)}>
+              Available lockers
+            </Button>
+            <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setBulkUploadOpen(true)}>
+              Bulk upload
+            </Button>
+          </>
         }
       />
 
       <LockerBulkUploadDialog open={bulkUploadOpen} libraryId={libraryId!} onClose={() => setBulkUploadOpen(false)} />
+      <AvailableLockersDialog open={availableOpen} libraryId={libraryId!} onClose={() => setAvailableOpen(false)} />
 
       <CrudFormDialog<CreateForm>
         open={dialogOpen}

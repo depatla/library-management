@@ -1,4 +1,5 @@
 import { baseApi } from '@/shared/api/baseApi'
+import { apiClient } from '@/shared/api/apiClient'
 import type { Page } from '@/features/rooms-cabins/roomsCabinsApi'
 
 export interface Student {
@@ -42,6 +43,41 @@ export interface StudentCreate {
 }
 
 export type StudentUpdate = Partial<Omit<StudentCreate, 'cabin_id' | 'locker_id'>>
+
+export interface StudentBulkUploadRowError {
+  row_number: number
+  name: string | null
+  error: string
+}
+
+export interface StudentBulkUploadResult {
+  created_count: number
+  error_count: number
+  errors: StudentBulkUploadRowError[]
+}
+
+export interface PendingPaymentStudent {
+  id: string
+  full_name: string
+  phone: string
+  whatsapp_number: string | null
+  cabin_number: string | null
+  expiry_date: string
+}
+
+export async function downloadStudentSampleCsv(libraryId: string): Promise<void> {
+  const response = await apiClient.get(`/libraries/${libraryId}/students/bulk-upload/sample`, {
+    responseType: 'blob',
+  })
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'students_sample.csv'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
 
 export const studentsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -96,6 +132,18 @@ export const studentsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Student'],
     }),
+    bulkUploadStudents: builder.mutation<StudentBulkUploadResult, { libraryId: string; file: File }>({
+      query: ({ libraryId, file }) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return { url: `/libraries/${libraryId}/students/bulk-upload`, method: 'POST', data: formData }
+      },
+      invalidatesTags: ['Student'],
+    }),
+    listPendingPaymentStudents: builder.query<PendingPaymentStudent[], string>({
+      query: (libraryId) => ({ url: `/libraries/${libraryId}/students/pending-payment`, method: 'GET' }),
+      providesTags: ['Student'],
+    }),
   }),
 })
 
@@ -108,4 +156,6 @@ export const {
   useAssignCabinMutation,
   useAssignLockerMutation,
   useSetStudentStatusMutation,
+  useBulkUploadStudentsMutation,
+  useListPendingPaymentStudentsQuery,
 } = studentsApi

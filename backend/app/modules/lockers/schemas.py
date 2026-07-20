@@ -24,6 +24,11 @@ class LockerOut(BaseModel):
     status: str
 
 
+class AvailableLockerOut(BaseModel):
+    locker_number: str
+    monthly_rent: float
+
+
 class LockerBulkUploadRowError(BaseModel):
     row_number: int
     locker_number: str | None

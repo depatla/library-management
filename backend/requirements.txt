@@ -18,5 +18,6 @@ structlog==24.4.0
 slowapi==0.1.9
 twilio==9.4.1
 qrcode[pil]==8.0
+Pillow==12.3.0
 groq==0.13.1
 python-dateutil==2.9.0.post0

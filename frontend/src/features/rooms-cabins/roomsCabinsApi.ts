@@ -68,6 +68,32 @@ export interface CabinBulkUploadResult {
   errors: CabinBulkUploadRowError[]
 }
 
+export interface AvailableCabin {
+  cabin_number: string
+  capacity: number
+}
+
+export interface AvailableCabinsGroup {
+  category_name: string
+  color_code: string | null
+  is_ac: boolean
+  cabins: AvailableCabin[]
+}
+
+export async function downloadAvailableCabinsPdf(libraryId: string): Promise<void> {
+  const response = await apiClient.get(`/libraries/${libraryId}/cabins/available/pdf`, {
+    responseType: 'blob',
+  })
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'available-cabins.pdf'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export async function downloadCabinSampleCsv(libraryId: string): Promise<void> {
   const response = await apiClient.get(`/libraries/${libraryId}/cabins/bulk-upload/sample`, {
     responseType: 'blob',
@@ -151,6 +177,10 @@ export const roomsCabinsApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ['Cabin'],
     }),
+    listAvailableCabins: builder.query<AvailableCabinsGroup[], string>({
+      query: (libraryId) => ({ url: `/libraries/${libraryId}/cabins/available`, method: 'GET' }),
+      providesTags: ['Cabin'],
+    }),
   }),
 })
 
@@ -166,4 +196,5 @@ export const {
   useUpdateCabinMutation,
   useDeleteCabinMutation,
   useBulkUploadCabinsMutation,
+  useListAvailableCabinsQuery,
 } = roomsCabinsApi

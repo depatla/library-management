@@ -31,6 +31,8 @@ class PaymentCreate(BaseModel):
                 raise ValueError("number_of_months is required for monthly payments")
         elif self.period_end is None:
             raise ValueError("period_end is required for daily payments")
+        if self.period_end is not None and self.period_end <= self.period_start:
+            raise ValueError("period_end must be after period_start")
         return self
 
 
